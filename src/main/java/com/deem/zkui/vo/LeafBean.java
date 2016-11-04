@@ -17,10 +17,13 @@
  */
 package com.deem.zkui.vo;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
+import com.deem.zkui.proton.ProtonRegistry;
+import com.deem.zkui.proton.base.RegistryItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 public class LeafBean implements Comparable<LeafBean> {
 
@@ -29,12 +32,14 @@ public class LeafBean implements Comparable<LeafBean> {
     private String name;
     private byte[] value;
     private String strValue;
+    private ProtonRegistry registry;
 
     public LeafBean(String path, String name, byte[] value) {
         super();
         this.path = path;
         this.name = name;
         this.value = value;
+        this.registry = ProtonRegistry.getRegistry();
     }
 
     public String getPath() {
@@ -62,6 +67,13 @@ public class LeafBean implements Comparable<LeafBean> {
     }
 
     public String getStrValue() {
+        // Firstly try to find a registry, if found, use that to obtain
+        // a json string.
+        RegistryItem item = this.registry.getRegistryItem(path+"/"+name);
+        if ((null != item) && (null != item.getDeserializer())) {
+            return item.deserializer.toJson(this.value);
+        }
+
         try {
             return new String(this.value, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
